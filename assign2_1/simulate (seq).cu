@@ -37,23 +37,7 @@ static void checkCudaCall(cudaError_t result) {
 
 
 /* Add any functions you may need (like a worker) here. */
-__global__ void thread_func(double *old_array, double *current_array, double *next_array, long i_max) {
-    // Set a start and end
-    int i = ((blockDim.x * blockIdx.x) + threadIdx.x) + 1;
-    if (i < (i_max - 1)) {
-        return;
-    }
-    // Set all values from start to end for next_array.
-    double cur_i = current_array[i];
-    double old_i = old_array[i];
-    double cur_left = current_array[i - 1];
-    double cur_right = current_array[i + 1];
-    double c = 0.15;
-    
-    next_array[i] = (2 * cur_i) - old_i + (c * (cur_left - ((2 * cur_i) - cur_right)));
 
-    return;
-}
 
 /* Function that will simulate the wave equation, parallelized using CUDA.
  *
@@ -67,31 +51,23 @@ __global__ void thread_func(double *old_array, double *current_array, double *ne
  */
 double *simulate(const long i_max, const long t_max, const long block_size,
                  double *old_array, double *current_array, double *next_array) {
-    // Initialize the threading.
-    double *cuda_old_array, *cuda_current_array, *cuda_next_array; 
-    cudaMalloc(&cuda_old_array, sizeof(double) * i_max);
-    cudaMalloc(&cuda_current_array, sizeof(double) * i_max);
-    cudaMalloc(&cuda_next_array, sizeof(double) * i_max);
-
-    cudaMemcpy(cuda_old_array, old_array, sizeof(double) * i_max, cudaMemcpyHostToDevice);
-    cudaMemcpy(cuda_current_array, current_array, sizeof(double) * i_max, cudaMemcpyHostToDevice);
-    cudaMemcpy(cuda_next_array, next_array, sizeof(double) * i_max, cudaMemcpyHostToDevice);
-
+    // Init
     double *temp;
-    long blocks = ceil((i_max - 2) / block_size);
     for (int t=0; t < t_max; t++) {
-        thread_func<<<blocks, block_size>>>(cuda_old_array, cuda_current_array, cuda_next_array, i_max);
-        temp = cuda_old_array;
-        cuda_old_array = cuda_current_array;
-        cuda_current_array = cuda_next_array;
-        cuda_next_array = temp;
+        for (int i=1; i < i_max - 1; i++) {
+            double cur_i = current_array[i];
+            double old_i = old_array[i];
+            double cur_left = current_array[i - 1];
+            double cur_right = current_array[i + 1];
+            double c = 0.15;
+        
+            next_array[i] = (2 * cur_i) - old_i + (c * (cur_left - ((2 * cur_i) - cur_right)));
+        }
+        temp = old_array;
+        old_array = current_array;
+        current_array = next_array;
+        next_array = temp;
     }
-
-    cudaMemcpy(cuda_current_array, current_array, sizeof(double) * i_max, cudaMemcpyDeviceToHost);
-
-    cudaFree(cuda_old_array);
-    cudaFree(cuda_current_array);
-    cudaFree(cuda_next_array);
 
     /* You should return a pointer to the array with the final results. */
     return current_array;

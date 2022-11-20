@@ -39,17 +39,23 @@ static void checkCudaCall(cudaError_t result) {
 
 /* Change this kernel to properly encrypt the given data. The result should be
  * written to the given out data. */
-__global__ void encryptKernel(char* deviceDataIn, char* deviceDataOut) {
+__global__ void encryptKernel(char* deviceDataIn, char* deviceDataOut, int* deviceKey, int key_length) {
 
     // YOUR CODE HERE
+    int i = (blockDim.x * blockIdx.x) + threadIdx.x;
+    int k = i % key_length;
+    deviceDataOut[i] = (deviceDataIn[i] + deviceKey[k]) % 255;
 
 }
 
 /* Change this kernel to properly decrypt the given data. The result should be
  * written to the given out data. */
-__global__ void decryptKernel(char* deviceDataIn, char* deviceDataOut) {
+__global__ void decryptKernel(char* deviceDataIn, char* deviceDataOut,  int* deviceKey, int key_length) {
 
     // YOUR CODE HERE
+    int i = (blockDim.x * blockIdx.x) + threadIdx.x;
+    int k = i % key_length;
+    deviceDataOut[i] = (deviceDataIn[i] - deviceKey[k] + 255) % 255;
 
 }
 
@@ -66,6 +72,8 @@ int EncryptSeq (int n, char* data_in, char* data_out, int key_length, int *key)
   for (i=0; i<n; i++) {
 
     // YOUR CODE HERE
+    int k = i % key_length;
+    data_out[i] = (data_in[i] + key[k]) % 255;
 
   }
   sequentialTime.stop();
@@ -89,6 +97,8 @@ int DecryptSeq (int n, char* data_in, char* data_out, int key_length, int *key)
   for (i=0; i<n; i++) {
 
     // YOUR CODE HERE
+    int k = i % key_length;
+    data_out[i] = (data_in[i] - key[k] + 255) % 255;
 
   }
   sequentialTime.stop();
@@ -118,6 +128,15 @@ int EncryptCuda (int n, char* data_in, char* data_out, int key_length, int *key)
         cout << "could not allocate memory!" << endl;
         return -1;
     }
+    // Own added code
+    int* deviceKey = NULL;
+    checkCudaCall(cudaMalloc((void **) &deviceKey, key_length * sizeof(int)));
+    if (deviceKey == NULL) {
+        checkCudaCall(cudaFree(deviceKey));
+        cout << "could not allocate memory!" << endl;
+        return -1;
+    }
+    // End own added code
 
     timer kernelTime1 = timer("kernelTime");
     timer memoryTime = timer("memoryTime");
@@ -125,11 +144,14 @@ int EncryptCuda (int n, char* data_in, char* data_out, int key_length, int *key)
     // copy the original vectors to the GPU
     memoryTime.start();
     checkCudaCall(cudaMemcpy(deviceDataIn, data_in, n*sizeof(char), cudaMemcpyHostToDevice));
+    // Own added code
+    checkCudaCall(cudaMemcpy(deviceKey, key, key_length*sizeof(int), cudaMemcpyHostToDevice));
+    // End own added code
     memoryTime.stop();
 
     // execute kernel
     kernelTime1.start();
-    encryptKernel<<<n/threadBlockSize, threadBlockSize>>>(deviceDataIn, deviceDataOut);
+    encryptKernel<<<n/threadBlockSize, threadBlockSize>>>(deviceDataIn, deviceDataOut, deviceKey, key_length);
     cudaDeviceSynchronize();
     kernelTime1.stop();
 
@@ -143,6 +165,9 @@ int EncryptCuda (int n, char* data_in, char* data_out, int key_length, int *key)
 
     checkCudaCall(cudaFree(deviceDataIn));
     checkCudaCall(cudaFree(deviceDataOut));
+    // Own added code
+    checkCudaCall(cudaFree(deviceKey));
+    // End own added code
 
     cout << fixed << setprecision(6);
     cout << "Encrypt (kernel): \t\t" << kernelTime1.getElapsed() << " seconds." << endl;
@@ -170,6 +195,15 @@ int DecryptCuda (int n, char* data_in, char* data_out, int key_length, int *key)
         cout << "could not allocate memory!" << endl;
         return -1;
     }
+    // Own added code
+    int* deviceKey = NULL;
+    checkCudaCall(cudaMalloc((void **) &deviceKey, key_length * sizeof(int)));
+    if (deviceKey == NULL) {
+        checkCudaCall(cudaFree(deviceKey));
+        cout << "could not allocate memory!" << endl;
+        return -1;
+    }
+    // End own added code
 
     timer kernelTime1 = timer("kernelTime");
     timer memoryTime = timer("memoryTime");
@@ -177,11 +211,14 @@ int DecryptCuda (int n, char* data_in, char* data_out, int key_length, int *key)
     // copy the original vectors to the GPU
     memoryTime.start();
     checkCudaCall(cudaMemcpy(deviceDataIn, data_in, n*sizeof(char), cudaMemcpyHostToDevice));
+    // Own added code
+    checkCudaCall(cudaMemcpy(deviceKey, key, key_length*sizeof(int), cudaMemcpyHostToDevice));
+    // End own added code
     memoryTime.stop();
 
     // execute kernel
     kernelTime1.start();
-    decryptKernel<<<n/threadBlockSize, threadBlockSize>>>(deviceDataIn, deviceDataOut);
+    decryptKernel<<<n/threadBlockSize, threadBlockSize>>>(deviceDataIn, deviceDataOut, deviceKey, key_length);
     cudaDeviceSynchronize();
     kernelTime1.stop();
 
@@ -195,6 +232,9 @@ int DecryptCuda (int n, char* data_in, char* data_out, int key_length, int *key)
 
     checkCudaCall(cudaFree(deviceDataIn));
     checkCudaCall(cudaFree(deviceDataOut));
+    // Own added code
+    checkCudaCall(cudaFree(deviceKey));
+    // End own added code
 
     cout << fixed << setprecision(6);
     cout << "Decrypt (kernel): \t\t" << kernelTime1.getElapsed() << " seconds." << endl;
