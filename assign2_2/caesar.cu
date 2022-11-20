@@ -44,7 +44,12 @@ __global__ void encryptKernel(char* deviceDataIn, char* deviceDataOut, int* devi
     // YOUR CODE HERE
     int i = (blockDim.x * blockIdx.x) + threadIdx.x;
     int k = i % key_length;
-    deviceDataOut[i] = (char)(((int)deviceDataIn[i] + deviceKey[k]) % 255);
+    if (deviceDataIn[i] >= ' ' and deviceDataIn[i] <= '~') {
+        deviceDataOut[i] = (char)((((int)deviceDataIn[i] - ' ' + deviceKey[k]) % 95) + ' ');
+    }
+    else {
+        deviceDataOut[i] = deviceDataIn[i];
+    }
 
 }
 
@@ -55,7 +60,12 @@ __global__ void decryptKernel(char* deviceDataIn, char* deviceDataOut,  int* dev
     // YOUR CODE HERE
     int i = (blockDim.x * blockIdx.x) + threadIdx.x;
     int k = i % key_length;
-    deviceDataOut[i] = (char)(((int)deviceDataIn[i] - deviceKey[k] + 255) % 255);
+    if (deviceDataIn[i] >= ' ' and deviceDataIn[i] <= '~') {
+        deviceDataOut[i] = (char)((((int)deviceDataIn[i] - ' ' - deviceKey[k] + 95) % 255) + ' ');
+    }
+    else {
+        deviceDataOut[i] = deviceDataIn[i];
+    }
 
 }
 
@@ -73,7 +83,12 @@ int EncryptSeq (int n, char* data_in, char* data_out, int key_length, int *key)
 
     // YOUR CODE HERE
     int k = i % key_length;
-    data_out[i] = (char)(((int)data_in[i] + key[k]) % 255);
+    if (data_in[i] >= ' ' and data_in[i] <= '~') {
+        data_out[i] = (char)((((int)data_in[i] - ' ' + key[k]) % 95) + ' ');
+    }
+    else {
+        data_out[i] = data_in[i];
+    }
 
   }
   sequentialTime.stop();
@@ -98,7 +113,12 @@ int DecryptSeq (int n, char* data_in, char* data_out, int key_length, int *key)
 
     // YOUR CODE HERE
     int k = i % key_length;
-    data_out[i] = (char)(((int)data_in[i] - key[k] + 255) % 255);
+    if (data_in[i] >= ' ' and data_in[i] <= '~') {
+        data_out[i] = (char)((((int)data_in[i] - ' ' - key[k] + 95) % 255) + ' ');
+    }
+    else {
+        data_out[i] = data_in[i];
+    }
 
   }
   sequentialTime.stop();
