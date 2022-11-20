@@ -44,7 +44,7 @@ __global__ void encryptKernel(char* deviceDataIn, char* deviceDataOut, int* devi
     // YOUR CODE HERE
     int i = (blockDim.x * blockIdx.x) + threadIdx.x;
     int k = i % key_length;
-    deviceDataOut[i] = (deviceDataIn[i] + deviceKey[k]) % 255;
+    deviceDataOut[i] = (char)(((int)deviceDataIn[i] + deviceKey[k]) % 255);
 
 }
 
@@ -55,7 +55,7 @@ __global__ void decryptKernel(char* deviceDataIn, char* deviceDataOut,  int* dev
     // YOUR CODE HERE
     int i = (blockDim.x * blockIdx.x) + threadIdx.x;
     int k = i % key_length;
-    deviceDataOut[i] = (deviceDataIn[i] - deviceKey[k] + 255) % 255;
+    deviceDataOut[i] = (char)(((int)deviceDataIn[i] - deviceKey[k] + 255) % 255);
 
 }
 
@@ -73,7 +73,7 @@ int EncryptSeq (int n, char* data_in, char* data_out, int key_length, int *key)
 
     // YOUR CODE HERE
     int k = i % key_length;
-    data_out[i] = (data_in[i] + key[k]) % 255;
+    data_out[i] = (char)(((int)data_in[i] + key[k]) % 255);
 
   }
   sequentialTime.stop();
@@ -98,7 +98,7 @@ int DecryptSeq (int n, char* data_in, char* data_out, int key_length, int *key)
 
     // YOUR CODE HERE
     int k = i % key_length;
-    data_out[i] = (data_in[i] - key[k] + 255) % 255;
+    data_out[i] = (char)(((int)data_in[i] - key[k] + 255) % 255);
 
   }
   sequentialTime.stop();
