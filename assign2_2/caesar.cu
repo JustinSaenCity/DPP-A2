@@ -114,7 +114,7 @@ int DecryptSeq (int n, char* data_in, char* data_out, int key_length, int *key)
     // YOUR CODE HERE
     int k = i % key_length;
     if (data_in[i] >= ' ' and data_in[i] <= '~') {
-        data_out[i] = (char)((((int)data_in[i] - ' ' - key[k] + 95) % 255) + ' ');
+        data_out[i] = (char)((((int)data_in[i] - ' ' - key[k] + 95) % 95) + ' ');
     }
     else {
         data_out[i] = data_in[i];
