@@ -61,7 +61,7 @@ __global__ void decryptKernel(char* deviceDataIn, char* deviceDataOut,  int* dev
     int i = (blockDim.x * blockIdx.x) + threadIdx.x;
     int k = i % key_length;
     if (deviceDataIn[i] >= ' ' and deviceDataIn[i] <= '~') {
-        deviceDataOut[i] = (char)((((int)deviceDataIn[i] - ' ' - deviceKey[k] + 95) % 255) + ' ');
+        deviceDataOut[i] = (char)((((int)deviceDataIn[i] - ' ' - deviceKey[k] + 95) % 95) + ' ');
     }
     else {
         deviceDataOut[i] = deviceDataIn[i];
