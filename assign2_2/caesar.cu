@@ -43,7 +43,7 @@ __global__ void encryptKernel(char* deviceDataIn, char* deviceDataOut, int* devi
 
     // YOUR CODE HERE
     int i = (blockDim.x * blockIdx.x) + threadIdx.x;
-    if (i > n) {
+    if (i > (n - 1)) {
         return;
     }
     int k = i % key_length;
@@ -178,7 +178,7 @@ int EncryptCuda (int n, char* data_in, char* data_out, int key_length, int *key)
     // execute kernel
     kernelTime1.start();
     // Own added code
-    int blocks = ceil(n/threadBlockSize);
+    int blocks = ceil((double)n / (double)threadBlockSize);
     // End own added code
     encryptKernel<<<blocks, threadBlockSize>>>(deviceDataIn, deviceDataOut, deviceKey, key_length, n);
     cudaDeviceSynchronize();
@@ -247,7 +247,10 @@ int DecryptCuda (int n, char* data_in, char* data_out, int key_length, int *key)
 
     // execute kernel
     kernelTime1.start();
-    decryptKernel<<<n/threadBlockSize, threadBlockSize>>>(deviceDataIn, deviceDataOut, deviceKey, key_length);
+    // Own added code
+    int blocks = ceil((double)n / (double)threadBlockSize);
+    // End own added code
+    decryptKernel<<<blocks, threadBlockSize>>>(deviceDataIn, deviceDataOut, deviceKey, key_length, n);
     cudaDeviceSynchronize();
     kernelTime1.stop();
 
