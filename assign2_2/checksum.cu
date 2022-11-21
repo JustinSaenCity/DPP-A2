@@ -51,13 +51,13 @@ static void checkCudaCall(cudaError_t result) {
  * calls your kernel. */
 unsigned int checksumSeq (int n, unsigned int* data_in) {
     int i;
-    unsigned int sum;
+    unsigned int sum = 0;
     timer sequentialTime = timer("Sequential checksum");
 
     sequentialTime.start();
     for (i=0; i<n; i++) {
         sum += data_in[i];
-        }
+    }
     sequentialTime.stop();
 
     cout << fixed << setprecision(6);
