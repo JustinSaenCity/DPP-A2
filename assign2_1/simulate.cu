@@ -40,7 +40,7 @@ static void checkCudaCall(cudaError_t result) {
 __global__ void thread_func(double *old_array, double *current_array, double *next_array, long i_max) {
     // Set a start and end
     int i = ((blockDim.x * blockIdx.x) + threadIdx.x) + 1;
-    if (i < (i_max - 1)) {
+    if (i > (i_max - 1)) {
         return;
     }
     // Set all values from start to end for next_array.
@@ -81,13 +81,14 @@ double *simulate(const long i_max, const long t_max, const long block_size,
     long blocks = ceil((i_max - 2) / block_size);
     for (int t=0; t < t_max; t++) {
         thread_func<<<blocks, block_size>>>(cuda_old_array, cuda_current_array, cuda_next_array, i_max);
+        cudaDeviceSynchronize();
         temp = cuda_old_array;
         cuda_old_array = cuda_current_array;
         cuda_current_array = cuda_next_array;
         cuda_next_array = temp;
     }
 
-    cudaMemcpy(cuda_current_array, current_array, sizeof(double) * i_max, cudaMemcpyDeviceToHost);
+    cudaMemcpy(current_array, cuda_current_array, sizeof(double) * i_max, cudaMemcpyDeviceToHost);
 
     cudaFree(cuda_old_array);
     cudaFree(cuda_current_array);
