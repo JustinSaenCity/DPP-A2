@@ -6,7 +6,7 @@ CC   = g++
 #   compiled against. Alternatively, compile with 'make COMPUTE=..." to make a
 #   one-time change.
 ifndef COMPUTE
-COMPUTE = 75
+COMPUTE = 52
 endif
 
 # Flags for each of the compilers

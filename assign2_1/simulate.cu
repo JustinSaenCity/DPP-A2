@@ -40,17 +40,16 @@ static void checkCudaCall(cudaError_t result) {
 __global__ void thread_func(double *old_array, double *current_array, double *next_array, long i_max) {
     // Set a start and end
     int i = ((blockDim.x * blockIdx.x) + threadIdx.x) + 1;
-    if (i > (i_max - 1)) {
-        return;
+    if (i < (i_max)) {
+        // Set all values from start to end for next_array.
+        double cur_i = current_array[i];
+        double old_i = old_array[i];
+        double cur_left = current_array[i - 1];
+        double cur_right = current_array[i + 1];
+        double c = 0.15;
+
+        next_array[i] = (2 * cur_i) - old_i + (c * (cur_left - ((2 * cur_i) - cur_right)));
     }
-    // Set all values from start to end for next_array.
-    double cur_i = current_array[i];
-    double old_i = old_array[i];
-    double cur_left = current_array[i - 1];
-    double cur_right = current_array[i + 1];
-    double c = 0.15;
-    
-    next_array[i] = (2 * cur_i) - old_i + (c * (cur_left - ((2 * cur_i) - cur_right)));
 
     return;
 }
