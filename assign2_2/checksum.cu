@@ -39,26 +39,31 @@ static void checkCudaCall(cudaError_t result) {
 /* Change this kernel to compute a simple, additive checksum of the given data.
  * The result should be written to the given result-integer, which is an
  * integer and NOT an array like deviceDataIn. */
- __global__ void checksumKernel(unsigned int* result, unsigned int *deviceDataIn){
-
-    // YOUR CODE HERE
-
+ __global__ void checksumKernel(unsigned int* result, unsigned int *deviceDataIn, int n){
+    int i = (blockDim.x * blockIdx.x) + threadIdx.x;
+    if (i > n) {
+        return;
+    }
+    atomicAdd(result, deviceDataIn[i]);
 }
 
 /* Wrapper for your checksum kernel, i.e., does the necessary preparations and
  * calls your kernel. */
 unsigned int checksumSeq (int n, unsigned int* data_in) {
     int i;
+    unsigned int sum;
     timer sequentialTime = timer("Sequential checksum");
 
     sequentialTime.start();
-    for (i=0; i<n; i++) {}
+    for (i=0; i<n; i++) {
+        sum += data_in[i];
+        }
     sequentialTime.stop();
 
     cout << fixed << setprecision(6);
     cout << "Checksum (sequential): \t\t" << sequentialTime.getElapsed() << " seconds." << endl;
 
-    return 0;
+    return sum;
 }
 
 /**
@@ -92,7 +97,8 @@ unsigned int checksumSeq (int n, unsigned int* data_in) {
     memoryTime.stop();
 
     kernelTime.start();
-    checksumKernel<<<n/threadBlockSize, threadBlockSize>>>(deviceResult, deviceDataIn);
+    int blocks = ceil((double)n / (double)threadBlockSize);
+    checksumKernel<<<blocks, threadBlockSize>>>(deviceResult, deviceDataIn, n);
     cudaDeviceSynchronize();
     kernelTime.stop();
 
