@@ -39,8 +39,8 @@ static void checkCudaCall(cudaError_t result) {
 /* Add any functions you may need (like a worker) here. */
 __global__ void thread_func(double *old_array, double *current_array, double *next_array, long i_max) {
     // Set a start and end
-    int i = ((blockDim.x * blockIdx.x) + threadIdx.x) + 1;
-    if (i > (i_max - 2)) {
+    int i = ((blockDim.x * blockIdx.x) + threadIdx.x) + 1;  // Get index
+    if (i > (i_max - 2)) {  // If index out of range
         return;
     }
     // Set all values from start to end for next_array.
@@ -67,7 +67,7 @@ __global__ void thread_func(double *old_array, double *current_array, double *ne
  */
 double *simulate(const long i_max, const long t_max, const long block_size,
                  double *old_array, double *current_array, double *next_array) {
-    // Initialize the threading.
+    // Initialize the memory for GPU
     double *cuda_old_array, *cuda_current_array, *cuda_next_array; 
     checkCudaCall(cudaMalloc(&cuda_old_array, sizeof(double) * i_max));
     checkCudaCall(cudaMalloc(&cuda_current_array, sizeof(double) * i_max));
@@ -77,20 +77,25 @@ double *simulate(const long i_max, const long t_max, const long block_size,
     checkCudaCall(cudaMemcpy(cuda_current_array, current_array, sizeof(double) * i_max, cudaMemcpyHostToDevice));
     checkCudaCall(cudaMemcpy(cuda_next_array, next_array, sizeof(double) * i_max, cudaMemcpyHostToDevice));
 
-    double *temp;
-    long blocks = ceil((double)(i_max - 2) / (double)block_size);
-    printf("%ld\n", blocks);
+    double *temp;  // Initialize temp for swapping pointers
+    long blocks = ceil((double)(i_max - 2) / (double)block_size);  // Decide block amount
     for (int t=0; t < t_max; t++) {
+        // Call GPU threads
         thread_func<<<blocks, block_size>>>(cuda_old_array, cuda_current_array, cuda_next_array, i_max);
+        // Sync threads
         cudaDeviceSynchronize();
+        
+        // Swap memory
         temp = cuda_old_array;
         cuda_old_array = cuda_current_array;
         cuda_current_array = cuda_next_array;
         cuda_next_array = temp;
     }
 
+    // Copy results to CPU
     checkCudaCall(cudaMemcpy(current_array, cuda_current_array, sizeof(double) * i_max, cudaMemcpyDeviceToHost));
 
+    // Cleanup
     checkCudaCall(cudaFree(cuda_old_array));
     checkCudaCall(cudaFree(cuda_current_array));
     checkCudaCall(cudaFree(cuda_next_array));
