@@ -42,12 +42,15 @@ static void checkCudaCall(cudaError_t result) {
 __global__ void encryptKernel(char* deviceDataIn, char* deviceDataOut, int* deviceKey, int key_length, int n) {
 
     // YOUR CODE HERE
-    int i = (blockDim.x * blockIdx.x) + threadIdx.x;
-    if (i > (n - 1)) {
+    int i = (blockDim.x * blockIdx.x) + threadIdx.x;  // Get index
+    if (i > (n - 1)) {  // Check if index in range
         return;
     }
-    int k = i % key_length;
+    int k = i % key_length;  // Get index of to be used key
+    
+    // Check if character in printable characters, otherwise don't change it
     if (deviceDataIn[i] >= ' ' and deviceDataIn[i] <= '~') {
+        // Shift character forwards
         deviceDataOut[i] = (char)((((int)deviceDataIn[i] - ' ' + deviceKey[k]) % 95) + ' ');
     }
     else {
@@ -61,12 +64,15 @@ __global__ void encryptKernel(char* deviceDataIn, char* deviceDataOut, int* devi
 __global__ void decryptKernel(char* deviceDataIn, char* deviceDataOut,  int* deviceKey, int key_length, int n) {
 
     // YOUR CODE HERE
-    int i = (blockDim.x * blockIdx.x) + threadIdx.x;
-    if (i > n) {
+    int i = (blockDim.x * blockIdx.x) + threadIdx.x;  // Get index
+    if (i > n) {  // Check if index in range
         return;
     }
-    int k = i % key_length;
+    int k = i % key_length;  // Get index of to be used key
+    
+    // Check if character in printable characters, otherwise don't change it
     if (deviceDataIn[i] >= ' ' and deviceDataIn[i] <= '~') {
+        // Shift character forwards
         deviceDataOut[i] = (char)((((int)deviceDataIn[i] - ' ' - deviceKey[k] + 95) % 95) + ' ');
     }
     else {
@@ -88,8 +94,10 @@ int EncryptSeq (int n, char* data_in, char* data_out, int key_length, int *key)
   for (i=0; i<n; i++) {
 
     // YOUR CODE HERE
-    int k = i % key_length;
+    int k = i % key_length;  // Get index of to be used key
+    // Check if character in printable characters, otherwise don't change it
     if (data_in[i] >= ' ' and data_in[i] <= '~') {
+        // Shift character forwards
         data_out[i] = (char)((((int)data_in[i] - ' ' + key[k]) % 95) + ' ');
     }
     else {
@@ -118,8 +126,10 @@ int DecryptSeq (int n, char* data_in, char* data_out, int key_length, int *key)
   for (i=0; i<n; i++) {
 
     // YOUR CODE HERE
-    int k = i % key_length;
+    int k = i % key_length;  // Get index of to be used key
+    // Check if character in printable characters, otherwise don't change it
     if (data_in[i] >= ' ' and data_in[i] <= '~') {
+        // Shift character forwards
         data_out[i] = (char)((((int)data_in[i] - ' ' - key[k] + 95) % 95) + ' ');
     }
     else {
@@ -178,6 +188,7 @@ int EncryptCuda (int n, char* data_in, char* data_out, int key_length, int *key)
     // execute kernel
     kernelTime1.start();
     // Own added code
+    // Make sure there are enough blocks
     int blocks = ceil((double)n / (double)threadBlockSize);
     // End own added code
     encryptKernel<<<blocks, threadBlockSize>>>(deviceDataIn, deviceDataOut, deviceKey, key_length, n);
@@ -248,6 +259,7 @@ int DecryptCuda (int n, char* data_in, char* data_out, int key_length, int *key)
     // execute kernel
     kernelTime1.start();
     // Own added code
+    // Make sure there are enough blocks
     int blocks = ceil((double)n / (double)threadBlockSize);
     // End own added code
     decryptKernel<<<blocks, threadBlockSize>>>(deviceDataIn, deviceDataOut, deviceKey, key_length, n);
