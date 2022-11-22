@@ -40,10 +40,11 @@ static void checkCudaCall(cudaError_t result) {
  * The result should be written to the given result-integer, which is an
  * integer and NOT an array like deviceDataIn. */
  __global__ void checksumKernel(unsigned int* result, unsigned int *deviceDataIn, int n){
-    int i = (blockDim.x * blockIdx.x) + threadIdx.x;
-    if (i > n) {
+    int i = (blockDim.x * blockIdx.x) + threadIdx.x;  // Get index
+    if (i > n) {  // Check if index in range of file.
         return;
     }
+    // Do an atomic add as to add all ascii values of all characters in the file.
     atomicAdd(result, deviceDataIn[i]);
 }
 
@@ -56,6 +57,7 @@ unsigned int checksumSeq (int n, unsigned int* data_in) {
 
     sequentialTime.start();
     for (i=0; i<n; i++) {
+        // Add every ascii value of every character in the file up.
         sum += data_in[i];
     }
     sequentialTime.stop();
